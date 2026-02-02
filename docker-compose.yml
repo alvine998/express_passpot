@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: express_passpot
+    restart: unless-stopped
+    ports:
+      - "5040:5040"
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - passpot-network
+
+networks:
+  passpot-network:
+    driver: bridge

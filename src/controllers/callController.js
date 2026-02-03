@@ -3,10 +3,32 @@ const { Op } = require("sequelize");
 const { success, error } = require("../utils/responseHelper");
 const { sendPushNotification } = require("../services/notificationService");
 
+// Helper to validate UUID
+const isValidUUID = (uuid) => {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 // Log a new call
 exports.logCall = async (req, res) => {
   const { receiverId, callType, status, duration, startTime, endTime } =
     req.body;
+
+  console.log("[logCall] Request Body:", JSON.stringify(req.body));
+  console.log("[logCall] Caller ID:", req.user.id);
+
+  if (!receiverId) {
+    return error(res, "receiverId is required", 400);
+  }
+
+  if (!isValidUUID(receiverId)) {
+    return error(
+      res,
+      `Invalid receiverId format. Expected UUID, got: ${receiverId}`,
+      400,
+    );
+  }
 
   try {
     const call = await Call.create({
@@ -41,7 +63,8 @@ exports.logCall = async (req, res) => {
 
     return success(res, "Call logged successfully", call, 201);
   } catch (err) {
-    return error(res, err.message, 500);
+    console.error("[logCall] Error:", err);
+    return error(res, err.message || "Failed to log call", 500);
   }
 };
 

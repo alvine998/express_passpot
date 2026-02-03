@@ -131,12 +131,10 @@ io.on("connection", (socket) => {
   // WebRTC Signaling Handshake (using User IDs)
   socket.on("call-user", (data) => {
     console.log("[call-user] Received:", JSON.stringify(data));
-    console.log("[call-user] Caller socket.userId:", socket.userId);
-    console.log("[call-user] userSocketMap:", [...userSocketMap.entries()]);
 
     if (!data || !data.to) {
-      console.log("[call-user] Invalid data received:", data);
-      socket.emit("call-error", { message: "Invalid call data" });
+      console.log("[call-user] ERROR: Missing recipient 'to' field");
+      socket.emit("call-error", { message: "Recipient ID required" });
       return;
     }
 
@@ -144,7 +142,6 @@ io.on("connection", (socket) => {
     console.log("[call-user] Receiver socket ID:", receiverSocketId);
 
     if (receiverSocketId) {
-      // Use io.to() instead of socket.to() for proper emission
       io.to(receiverSocketId).emit("call-made", {
         offer: data.offer,
         from: socket.userId,
@@ -162,25 +159,25 @@ io.on("connection", (socket) => {
     console.log("[make-answer] Received:", JSON.stringify(data));
 
     if (!data || !data.to) {
-      console.log("[make-answer] Invalid data received:", data);
+      console.log("[make-answer] ERROR: Missing recipient 'to' field");
       return;
     }
 
     const callerSocketId = userSocketMap.get(data.to.toString());
-    console.log("[make-answer] Caller socket ID:", callerSocketId);
-
     if (callerSocketId) {
       io.to(callerSocketId).emit("answer-made", {
         answer: data.answer,
         from: socket.userId,
       });
-      console.log("[make-answer] answer-made event sent to:", callerSocketId);
     }
   });
 
   socket.on("ice-candidate", (data) => {
     if (!data || !data.to) {
-      console.log("[ice-candidate] Invalid data received:", data);
+      console.log(
+        "[ice-candidate] ERROR: Missing recipient 'to' field in data:",
+        JSON.stringify(data),
+      );
       return;
     }
 
@@ -190,12 +187,13 @@ io.on("connection", (socket) => {
         candidate: data.candidate,
         from: socket.userId,
       });
+    } else {
+      console.log("[ice-candidate] Target user offline or not found:", data.to);
     }
   });
 
   // Handle call rejection
   socket.on("reject-call", (data) => {
-    console.log("[reject-call] Received:", JSON.stringify(data));
     if (data && data.to) {
       const callerSocketId = userSocketMap.get(data.to.toString());
       if (callerSocketId) {
@@ -215,7 +213,11 @@ io.on("connection", (socket) => {
         io.to(targetSocketId).emit("call-ended", {
           from: socket.userId,
         });
+      } else {
+        console.log("[end-call] Target socket not found for ID:", data.to);
       }
+    } else {
+      console.log("[end-call] ERROR: Missing 'to' field in event");
     }
   });
 

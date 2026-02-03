@@ -70,13 +70,17 @@ io.on("connection", (socket) => {
   // Register user ID to socket mapping
   socket.on("register-user", async (userId) => {
     if (userId) {
-      userSocketMap.set(userId.toString(), socket.id);
-      socket.userId = userId.toString();
-      console.log(`User ${userId} registered with socket ${socket.id}`);
+      const normalizedUserId = userId.toString();
+      userSocketMap.set(normalizedUserId, socket.id);
+      socket.userId = normalizedUserId;
+      console.log(
+        `[socket] User Registered: ${normalizedUserId} (Socket: ${socket.id})`,
+      );
+      console.log(`[socket] Total active users: ${userSocketMap.size}`);
 
       // Notify friends that this user is online
       try {
-        const user = await User.findByPk(userId, {
+        const user = await User.findByPk(normalizedUserId, {
           include: [
             {
               model: User,
@@ -151,6 +155,10 @@ io.on("connection", (socket) => {
       console.log("[call-user] call-made event sent to:", receiverSocketId);
     } else {
       console.log("[call-user] Receiver not connected, userId:", data.to);
+      console.log(
+        "[call-user] Currently active users:",
+        Array.from(userSocketMap.keys()),
+      );
       socket.emit("call-error", { message: "User is offline" });
     }
   });

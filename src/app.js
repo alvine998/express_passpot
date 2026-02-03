@@ -130,44 +130,92 @@ io.on("connection", (socket) => {
 
   // WebRTC Signaling Handshake (using User IDs)
   socket.on("call-user", (data) => {
+    console.log("[call-user] Received:", JSON.stringify(data));
+    console.log("[call-user] Caller socket.userId:", socket.userId);
+    console.log("[call-user] userSocketMap:", [...userSocketMap.entries()]);
+
     if (!data || !data.to) {
-      console.log("Invalid call-user data received:", data);
+      console.log("[call-user] Invalid data received:", data);
+      socket.emit("call-error", { message: "Invalid call data" });
       return;
     }
+
     const receiverSocketId = userSocketMap.get(data.to.toString());
+    console.log("[call-user] Receiver socket ID:", receiverSocketId);
+
     if (receiverSocketId) {
-      socket.to(receiverSocketId).emit("call-made", {
+      // Use io.to() instead of socket.to() for proper emission
+      io.to(receiverSocketId).emit("call-made", {
         offer: data.offer,
         from: socket.userId,
+        callerName: data.callerName || "Unknown",
+        type: data.type || "audio",
       });
+      console.log("[call-user] call-made event sent to:", receiverSocketId);
+    } else {
+      console.log("[call-user] Receiver not connected, userId:", data.to);
+      socket.emit("call-error", { message: "User is offline" });
     }
   });
 
   socket.on("make-answer", (data) => {
+    console.log("[make-answer] Received:", JSON.stringify(data));
+
     if (!data || !data.to) {
-      console.log("Invalid make-answer data received:", data);
+      console.log("[make-answer] Invalid data received:", data);
       return;
     }
+
     const callerSocketId = userSocketMap.get(data.to.toString());
+    console.log("[make-answer] Caller socket ID:", callerSocketId);
+
     if (callerSocketId) {
-      socket.to(callerSocketId).emit("answer-made", {
+      io.to(callerSocketId).emit("answer-made", {
         answer: data.answer,
         from: socket.userId,
       });
+      console.log("[make-answer] answer-made event sent to:", callerSocketId);
     }
   });
 
   socket.on("ice-candidate", (data) => {
     if (!data || !data.to) {
-      console.log("Invalid ice-candidate data received:", data);
+      console.log("[ice-candidate] Invalid data received:", data);
       return;
     }
+
     const targetSocketId = userSocketMap.get(data.to.toString());
     if (targetSocketId) {
-      socket.to(targetSocketId).emit("ice-candidate", {
+      io.to(targetSocketId).emit("ice-candidate", {
         candidate: data.candidate,
         from: socket.userId,
       });
+    }
+  });
+
+  // Handle call rejection
+  socket.on("reject-call", (data) => {
+    console.log("[reject-call] Received:", JSON.stringify(data));
+    if (data && data.to) {
+      const callerSocketId = userSocketMap.get(data.to.toString());
+      if (callerSocketId) {
+        io.to(callerSocketId).emit("call-rejected", {
+          from: socket.userId,
+        });
+      }
+    }
+  });
+
+  // Handle call end
+  socket.on("end-call", (data) => {
+    console.log("[end-call] Received:", JSON.stringify(data));
+    if (data && data.to) {
+      const targetSocketId = userSocketMap.get(data.to.toString());
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("call-ended", {
+          from: socket.userId,
+        });
+      }
     }
   });
 

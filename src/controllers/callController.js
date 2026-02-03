@@ -90,11 +90,24 @@ exports.updateCall = async (req, res) => {
 
 // Get call history for current user
 exports.getCallHistory = async (req, res) => {
+  const { receiverId } = req.query;
+
   try {
+    const whereCondition = {
+      [Op.or]: [{ callerId: req.user.id }, { receiverId: req.user.id }],
+    };
+
+    // If receiverId is provided, filter further
+    if (receiverId) {
+      whereCondition[Op.and] = [
+        {
+          [Op.or]: [{ callerId: receiverId }, { receiverId: receiverId }],
+        },
+      ];
+    }
+
     const history = await Call.findAll({
-      where: {
-        [Op.or]: [{ callerId: req.user.id }, { receiverId: req.user.id }],
-      },
+      where: whereCondition,
       include: [
         {
           model: User,

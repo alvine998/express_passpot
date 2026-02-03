@@ -20,17 +20,17 @@ router.use(protect);
  *       type: object
  *       properties:
  *         id:
- *           type: integer
+ *           type: string
  *         callerId:
- *           type: integer
+ *           type: string
  *         receiverId:
- *           type: integer
+ *           type: string
  *         callType:
  *           type: string
  *           enum: [audio, video]
  *         status:
  *           type: string
- *           enum: [missed, completed, rejected, busy]
+ *           enum: [missed, answered, rejected, outgoing]
  *         duration:
  *           type: integer
  *         startTime:
@@ -152,6 +152,12 @@ router.put("/:id", callController.updateCall);
  *     tags: [Call]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: receiverId
+ *         schema:
+ *           type: string
+ *         description: Optional ID of the other user to filter history with
  *     responses:
  *       200:
  *         description: Call history list

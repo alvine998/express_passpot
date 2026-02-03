@@ -29,7 +29,14 @@ connectDB().then(() => {
 });
 
 // Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable CSP for Swagger UI
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    crossOriginResourcePolicy: false,
+  }),
+);
 app.use(morgan("dev"));
 app.use(cors());
 app.use(express.json());

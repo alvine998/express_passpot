@@ -1,4 +1,5 @@
 const swaggerJsdoc = require("swagger-jsdoc");
+const path = require("path");
 
 const options = {
   definition: {
@@ -13,6 +14,10 @@ const options = {
       },
     },
     servers: [
+      {
+        url: "/api",
+        description: "Current Server",
+      },
       {
         url: "http://localhost:5040/api",
         description: "Local Development Server",
@@ -33,7 +38,7 @@ const options = {
       },
     ],
   },
-  apis: ["./src/routes/*.js"], // Path to the API docs
+  apis: [path.join(__dirname, "../routes/*.js")], // Absolute path for Docker compatibility
 };
 
 const swaggerSpec = swaggerJsdoc(options);

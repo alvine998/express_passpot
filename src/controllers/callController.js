@@ -76,12 +76,12 @@ exports.getCallHistory = async (req, res) => {
         {
           model: User,
           as: "caller",
-          attributes: ["id", "email", "displayName", "avatar"],
+          attributes: ["id", "email", ["displayName", "name"], "avatar"],
         },
         {
           model: User,
           as: "receiver",
-          attributes: ["id", "email", "displayName", "avatar"],
+          attributes: ["id", "email", ["displayName", "name"], "avatar"],
         },
       ],
       order: [["createdAt", "DESC"]],

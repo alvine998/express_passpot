@@ -14,8 +14,8 @@ const Call = sequelize.define(
       defaultValue: "audio",
     },
     status: {
-      type: DataTypes.ENUM("missed", "completed", "rejected", "busy"),
-      defaultValue: "missed",
+      type: DataTypes.ENUM("missed", "answered", "rejected", "outgoing"),
+      defaultValue: "outgoing",
     },
     duration: {
       type: DataTypes.INTEGER, // in seconds

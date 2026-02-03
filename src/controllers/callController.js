@@ -94,12 +94,16 @@ exports.getCallHistory = async (req, res) => {
 
   try {
     const whereCondition = {
-      callerId: req.user.id,
+      [Op.or]: [{ callerId: req.user.id }, { receiverId: req.user.id }],
     };
 
-    // If receiverId is provided, filter for calls TO that specific user
+    // If receiverId is provided, filter further
     if (receiverId) {
-      whereCondition.receiverId = receiverId;
+      whereCondition[Op.and] = [
+        {
+          [Op.or]: [{ callerId: receiverId }, { receiverId: receiverId }],
+        },
+      ];
     }
 
     const history = await Call.findAll({
